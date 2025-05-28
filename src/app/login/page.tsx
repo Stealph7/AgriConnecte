@@ -53,6 +53,8 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#22c55e] focus:border-transparent"
               required
+              autoComplete="username"
+              name="email"
             />
           </div>
 
@@ -67,6 +69,8 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#22c55e] focus:border-transparent"
               required
+              autoComplete="current-password"
+              name="password"
             />
           </div>
 

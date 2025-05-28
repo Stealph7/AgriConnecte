@@ -1,66 +1,49 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { cookies } from "next/headers"
+import { verify } from "jsonwebtoken"
+import { prisma } from "@/lib/db"
 
-export async function PUT(request: NextRequest) {
+export async function GET() {
   try {
-    const data = await request.json()
-    
-    // TODO: Implement actual database update
-    console.log("Updating user profile:", data)
+    const cookieStore = await cookies()
+    const token = cookieStore.get("auth-token")
 
-    // Simulate successful update
-    return NextResponse.json({
-      message: "Profile updated successfully",
-      data: data
-    })
-  } catch (error) {
-    console.error("Error updating profile:", error)
-    return NextResponse.json(
-      { error: "Failed to update profile" },
-      { status: 500 }
-    )
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  try {
-    const data = await request.json()
-    
-    // TODO: Implement password change
-    if (data.type === "password") {
-      console.log("Changing password:", data)
-      return NextResponse.json({
-        message: "Password updated successfully"
-      })
+    if (!token) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
     }
 
-    return NextResponse.json(
-      { error: "Invalid update type" },
-      { status: 400 }
-    )
-  } catch (error) {
-    console.error("Error updating user:", error)
-    return NextResponse.json(
-      { error: "Failed to update user" },
-      { status: 500 }
-    )
-  }
-}
+    // Verify token
+    const decoded = verify(
+      token.value,
+      process.env.NEXTAUTH_SECRET || "your-secret-key"
+    ) as { userId: number }
 
-export async function DELETE(request: NextRequest) {
-  try {
-    const data = await request.json()
-    
-    // TODO: Implement account deletion
-    console.log("Deleting account:", data)
-
-    return NextResponse.json({
-      message: "Account deleted successfully"
+    // Get user data
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+      },
     })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(user)
   } catch (error) {
-    console.error("Error deleting account:", error)
+    console.error("Profile error:", error)
     return NextResponse.json(
-      { error: "Failed to delete account" },
+      { error: "Internal server error" },
       { status: 500 }
     )
   }

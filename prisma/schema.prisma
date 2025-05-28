@@ -3,108 +3,61 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String
-  name          String
-  role          Role      @default(BUYER)
-  phone         String?
-  address       String?
-  bio          String?   @db.Text
-  photoUrl      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Producer specific fields
-  companyName   String?
-  taxId         String?
-
-  // Buyer specific fields
-  deliveryAddress String?
-  preferredPayment String?
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  products      Product[]
-  orders        Order[]
-  messages      Message[]
+  products Product[]
+  orders   Order[]
+  messages Message[]
 }
 
 model Product {
-  id          String    @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   name        String
-  description String    @db.Text
+  description String?
   price       Float
-  quantity    Int
-  unit        String    // e.g., "kg", "piece", etc.
-  imageUrl    String?
-  category    String
-  status      ProductStatus @default(AVAILABLE)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  stock       Int      @default(0)
+  userId      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  producer    User      @relation(fields: [producerId], references: [id])
-  producerId  String
-  orders      OrderItem[]
+  user   User    @relation(fields: [userId], references: [id])
+  orders Order[]
 }
 
 model Order {
-  id          String    @id @default(uuid())
-  status      OrderStatus @default(PENDING)
-  totalAmount Float
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  quantity  Int
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  buyer       User      @relation(fields: [buyerId], references: [id])
-  buyerId     String
-  items       OrderItem[]
-}
-
-model OrderItem {
-  id          String    @id @default(uuid())
-  quantity    Int
-  unitPrice   Float
-  totalPrice  Float
-
-  // Relations
-  order       Order     @relation(fields: [orderId], references: [id])
-  orderId     String
-  product     Product   @relation(fields: [productId], references: [id])
-  productId   String
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 }
 
 model Message {
-  id          String    @id @default(uuid())
-  content     String    @db.Text
-  createdAt   DateTime  @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  sender      User      @relation(fields: [senderId], references: [id])
-  senderId    String
-}
-
-enum Role {
-  ADMIN
-  PRODUCER
-  BUYER
-}
-
-enum ProductStatus {
-  AVAILABLE
-  OUT_OF_STOCK
-  DISCONTINUED
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  SHIPPED
-  DELIVERED
-  CANCELLED
+  user User @relation(fields: [userId], references: [id])
 }

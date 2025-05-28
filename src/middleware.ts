@@ -1,36 +1,60 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { verify } from "jsonwebtoken"
 
-// Define protected routes and roles allowed
-const protectedRoutes = [
-  { path: "/dashboard", roles: ["producer", "buyer", "admin"] },
-  { path: "/dashboard/settings", roles: ["producer", "buyer", "admin"] },
-  // Add more protected routes here
+// Paths that require authentication
+const protectedPaths = [
+  "/dashboard",
+  "/api/user/profile",
+  "/api/products",
+  "/api/orders",
+  "/api/messages",
 ]
 
-export function middleware(request: NextRequest) {
+// Paths that are accessible only to non-authenticated users
+const authPaths = ["/login", "/register"]
+
+export async function middleware(request: NextRequest) {
+  const token = request.cookies.get("auth-token")
   const { pathname } = request.nextUrl
 
-  // Check if the path is protected
-  const route = protectedRoutes.find(r => pathname.startsWith(r.path))
-  if (!route) {
-    // Public route, allow
+  // Check if path requires authentication
+  const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))
+  const isAuthPath = authPaths.some(path => pathname === path)
+
+  try {
+    if (token) {
+      // Verify token
+      verify(token.value, process.env.NEXTAUTH_SECRET || "your-secret-key")
+
+      // Redirect authenticated users away from auth pages
+      if (isAuthPath) {
+        return NextResponse.redirect(new URL("/dashboard", request.url))
+      }
+    } else if (isProtectedPath) {
+      // Redirect unauthenticated users to login
+      return NextResponse.redirect(new URL("/login", request.url))
+    }
+
+    return NextResponse.next()
+  } catch (error) {
+    // Token is invalid
+    if (isProtectedPath) {
+      return NextResponse.redirect(new URL("/login", request.url))
+    }
     return NextResponse.next()
   }
-
-  // Get user info from cookies or headers (simulate)
-  const userRole = request.cookies.get("userRole")?.value || "public"
-
-  if (!route.roles.includes(userRole)) {
-    // Redirect to login if not authorized
-    const loginUrl = new URL("/login", request.url)
-    return NextResponse.redirect(loginUrl)
-  }
-
-  return NextResponse.next()
 }
 
-// Specify paths to apply middleware
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    "/((?!_next/static|_next/image|favicon.ico|public).*)",
+  ],
 }

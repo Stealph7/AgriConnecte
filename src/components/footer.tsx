@@ -1,6 +1,7 @@
-export function Footer() {
-  const currentYear = new Date().getFullYear()
+import { Copyright } from "./copyright"
+import { ContactInfo } from "./contact-info"
 
+export function Footer() {
   return (
     <footer className="bg-white border-t border-gray-200">
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -72,26 +73,11 @@ export function Footer() {
           </div>
 
           {/* Contact */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact</h3>
-            <ul className="space-y-2">
-              <li className="text-gray-600">
-                <span className="font-medium">Téléphone:</span> +225 00 00 00 00
-              </li>
-              <li className="text-gray-600">
-                <span className="font-medium">Email:</span> contact@agriconnect.ci
-              </li>
-              <li className="text-gray-600">
-                <span className="font-medium">Adresse:</span> Abidjan, Côte d'Ivoire
-              </li>
-            </ul>
-          </div>
+          <ContactInfo />
         </div>
 
         <div className="border-t border-gray-200 mt-8 pt-8">
-          <p className="text-center text-gray-500 text-sm">
-            © {currentYear} AgriConnect CI. Tous droits réservés.
-          </p>
+          <Copyright />
         </div>
       </div>
     </footer>
